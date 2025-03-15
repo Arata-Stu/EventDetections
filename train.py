@@ -64,7 +64,7 @@ def main(config: DictConfig):
     assert distributed_backend in ('nccl', 'gloo'), f'{distributed_backend=}'
     strategy = DDPStrategy(process_group_backend=distributed_backend,
                            find_unused_parameters=False,
-                           gradient_as_bucket_view=True) if len(gpus) > 1 else None
+                           gradient_as_bucket_view=True) if len(gpus) > 1 else 'auto'
 
     # ---------------------
     # Data
