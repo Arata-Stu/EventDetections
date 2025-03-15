@@ -34,6 +34,6 @@ def get_ckpt_callback(config: DictConfig) -> ModelCheckpoint:
 def get_viz_callback(config: DictConfig) -> Callback:
     model_name = config.model.name
 
-    if model_name == 'rnndet':
+    if model_name in {'rvt', 'rvt_s5', 'YOLOX'}:
         return DetectionVizCallback(config=config)
     raise NotImplementedError
