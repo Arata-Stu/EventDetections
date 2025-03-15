@@ -9,7 +9,7 @@ def get_ckpt_callback(config: DictConfig) -> ModelCheckpoint:
     model_name = config.model.name
 
     prefix = 'val'
-    if model_name == 'rnndet':
+    if model_name in {'rvt', 'rvt_s5', 'YOLOX'}:
         metric = 'AP'
         mode = 'max'
     else:
