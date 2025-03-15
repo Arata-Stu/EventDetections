@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 
 from data.utils.types import ObjDetOutput
 from loggers.wandb_logger import WandbLogger
-from utils.evaluation.prophesee.visualize.vis_utils import LABELMAP_GEN1, LABELMAP_GEN4_SHORT, draw_bboxes
+from utils.vis_utils import LABELMAP_GEN1, LABELMAP_GEN4_SHORT, draw_bboxes
 from .viz_base import VizCallbackBase
 
 

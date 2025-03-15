@@ -1,6 +1,6 @@
 from omegaconf import DictConfig
-from pytorch_lightning.callbacks import Callback
-from pytorch_lightning.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import Callback
+from lightning.pytorch.callbacks import ModelCheckpoint
 
 from callbacks.detection import DetectionVizCallback
 

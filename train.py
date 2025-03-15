@@ -17,9 +17,9 @@ cudnn.allow_tf32 = True
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
-from pytorch_lightning.strategies import DDPStrategy
+import lightning.pytorch as pl
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelSummary
+from lightning.pytorch.strategies import DDPStrategy
 
 from callbacks.custom import get_ckpt_callback, get_viz_callback
 from callbacks.gradflow import GradFlowLogCallback
@@ -130,8 +130,8 @@ def main(config: DictConfig):
         max_epochs=config.training.max_epochs,
         max_steps=config.training.max_steps,
         strategy=strategy,
-        sync_batchnorm=False if strategy is None else True,
-        move_metrics_to_cpu=False,
+        sync_batchnorm=False if strategy == "auto" else True,
+        # move_metrics_to_cpu=False,
         benchmark=config.reproduce.benchmark,
         deterministic=config.reproduce.deterministic_flag,
     )

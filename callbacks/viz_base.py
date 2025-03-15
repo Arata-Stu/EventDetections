@@ -3,12 +3,12 @@ from enum import Enum
 from typing import Any, List, Optional, Type, Union
 
 import numpy as np
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch as th
 from einops import rearrange, reduce
 from omegaconf import DictConfig
-from pytorch_lightning.callbacks import Callback
-from pytorch_lightning.utilities.rank_zero import rank_zero_only
+from lightning.pytorch.callbacks import Callback
+from lightning.pytorch.utilities import rank_zero_only
 
 from loggers.wandb_logger import WandbLogger
 
