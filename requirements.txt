@@ -5,8 +5,9 @@ pandas
 scikit-learn
 
 # 機械学習・ディープラーニング関連
-torch
+torch=2.0.0
 torchvision
+torchdata==0.6.0
 lightning
 einops
 wandb
