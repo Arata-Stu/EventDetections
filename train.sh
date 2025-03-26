@@ -11,14 +11,14 @@ DATASET="gen4"  # gen1 gen4
 BATCH_SIZE_PER_GPU=8
 TRAIN_WORKERS_PER_GPU=6
 EVAL_WORKERS_PER_GPU=2
-PROJECT="RVT_${DATASET}"
 T_BIN=1
 CHANNEL=2
 SEQUENCE_LENGTH=5
+PROJECT="RVT_${DATASET}_BINS_${T_BIN}"
 
 # ループで異なるDTの値を設定して実行
 for DT in "${DT_VALUES[@]}"; do
-    DATA_DIR="/home/aten-22/dataset/gen4_preprocessed/dt_${DT}"
+    DATA_DIR="/home/aten-22/dataset/gen4_preprocessed_${T_BIN}/dt_${DT}"
     GROUP="duration_${DT}"
     
     echo "Running training with DT=${DT}"

@@ -18,7 +18,7 @@ SEQUENCE_LENGTH=5
 
 # ループで異なるDTの値を設定して実行
 for DT in "${DT_VALUES[@]}"; do
-    DATA_DIR="/home/aten-22/dataset/gen4_preprocessed/dt_${DT}"
+    DATA_DIR="/home/aten-22/dataset/gen4_preprocessed_${T_BIN}/dt_${DT}"
     GROUP="duration_${DT}"
     
     echo "Running evaluation with DT=${DT}"
@@ -29,5 +29,5 @@ for DT in "${DT_VALUES[@]}"; do
     hardware.num_workers.eval=${EVAL_WORKERS_PER_GPU} \
     batch_size.eval=${BATCH_SIZE_PER_GPU} \
     
-    echo "Finished evaluation for DT=${DT}"
+    echo "Finished evaluation for DT=${DT} BINS=${T_BIN}"
 done
