@@ -18,7 +18,7 @@ PROJECT="${MODEL}_${DATASET}_BINS_${T_BIN}"
 
 # ループで異なるDTの値を設定して実行
 for DT in "${DT_VALUES[@]}"; do
-    DATA_DIR="/home/aten-22/dataset/${DATASET}_preprocessed_${T_BIN}/dt_${DT}"
+    DATA_DIR="/home/aten-22/dataset/${DATASET}_preprocessed_bin_${T_BIN}/dt_${DT}"
     GROUP="duration_${DT}"
     
     echo "Running training with DT=${DT}"
