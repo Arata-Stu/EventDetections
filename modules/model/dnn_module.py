@@ -134,8 +134,7 @@ class ModelModule(pl.LightningModule):
             else:
                 assert self.mode_2_hw[mode] == ev_tensors.shape[-2:]
 
-            backbone_features = self.mdl.forward_backbone(x=ev_tensors,
-                                                          token_mask=token_masks)
+            backbone_features = self.mdl.forward_backbone(x=ev_tensors )
 
             current_labels, valid_batch_indices = sparse_obj_labels[tidx].get_valid_labels_and_batch_indices()
             # Store backbone features that correspond to the available labels.
