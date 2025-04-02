@@ -58,7 +58,9 @@ def main(config: DictConfig):
     # ---------------------
 
     module = fetch_model_module(config=config)
-    module = module.load_from_checkpoint(str(ckpt_path), **{'full_config': config})
+    module_class = type(module)
+    module = module_class.load_from_checkpoint(str(ckpt_path), **{'full_config': config})
+
 
     # ---------------------
     # Callbacks and Misc
