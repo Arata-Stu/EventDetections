@@ -16,14 +16,16 @@ def evaluate_list(result_boxes_list,
         classes = ("car", "pedestrian")
     elif camera == 'gen4':
         classes = ("pedestrian", "two-wheeler", "car")
+    elif camera == 'VGA':
+        classes = ("pedestrian", "two-wheeler", "car")
     else:
         raise NotImplementedError
 
     if apply_bbox_filters:
         # Default values taken from: https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox/blob/0393adea2bf22d833893c8cb1d986fcbe4e6f82d/src/psee_evaluator.py#L23-L24
-        min_box_diag = 60 if camera == 'gen4' else 30
+        min_box_diag = 60 if camera in {'gen4', 'VGA'} else 30
         # In the supplementary mat, they say that min_box_side is 20 for gen4.
-        min_box_side = 20 if camera == 'gen4' else 10
+        min_box_side = 20 if camera in {'gen4', 'VGA'} else 10
         if downsampled_by_2:
             assert min_box_diag % 2 == 0
             min_box_diag //= 2

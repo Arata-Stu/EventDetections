@@ -18,6 +18,7 @@ from models.layers.yolox.utils.boxes import postprocess
 LABELMAP_GEN1 = ("car", "pedestrian")
 LABELMAP_GEN4 = ('pedestrian', 'two wheeler', 'car', 'truck', 'bus', 'traffic sign', 'traffic light')
 LABELMAP_GEN4_SHORT = ('pedestrian', 'two wheeler', 'car')
+LABELMAP_VGA = ('pedestrian', 'two wheeler', 'car')
 
 ## 0~7まで定義しておく
 classid2colors = {
@@ -33,17 +34,21 @@ classid2colors = {
 
 dataset2labelmap = {
     "gen1": LABELMAP_GEN1,
-    "gen4": LABELMAP_GEN4
+    "gen4": LABELMAP_GEN4,
+    "VGA": LABELMAP_VGA,
+
 }
 
 dataset2scale = {
     "gen1": 1,
-    "gen4": 1
+    "gen4": 1,
+    "VGA": 1,
 }
 
 dataset2size = {
     "gen1": (304*1, 240*1),
     "gen4": (640*1, 360*1),
+    "VGA": (640*1, 480*1),
 }
 
 

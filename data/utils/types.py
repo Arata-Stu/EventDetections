@@ -25,6 +25,7 @@ class DataType(Enum):
 class DatasetType(Enum):
     GEN1 = auto()
     GEN4 = auto()
+    VGA = auto()
 
 
 class DatasetMode(Enum):
