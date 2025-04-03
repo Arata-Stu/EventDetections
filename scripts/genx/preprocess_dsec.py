@@ -55,16 +55,13 @@ split_name_2_type = {
     'test': SplitType.TEST,
 }
 
-dataset_2_height = {'gen1': 240, 'gen4': 720, 'VGA': 480}
-dataset_2_width = {'gen1': 304, 'gen4': 1280, 'VGA': 640}
+dataset_2_height = {'DSEC': 480, 'GIFU': 480, 'VGA': 480}
+dataset_2_width = {'DSEC': 640, 'GIFU': 640, 'VGA': 640}
 
 # The following sequences would be discarded because all the labels would be removed after filtering:
 dirs_to_ignore = {
-    'gen1': ('17-04-06_09-57-37_6344500000_6404500000',
-             '17-04-13_19-17-27_976500000_1036500000',
-             '17-04-06_15-14-36_1159500000_1219500000',
-             '17-04-11_15-13-23_122500000_182500000'),
-    'gen4': (),
+    'DSEC': (),
+    'GIFU': (),
     'VGA': (),
 }
 
@@ -119,7 +116,7 @@ class H5Reader:
     def __init__(self, h5_file: Path, dataset: str = 'gen4'):
         assert h5_file.exists()
         assert h5_file.suffix == '.h5'
-        assert dataset in {'gen1', 'gen4', 'VGA'}
+        assert dataset in {'VGA', 'DSEC', 'GIFU'}
 
         self.h5f = h5py.File(str(h5_file), 'r')
         self._finalizer = weakref.finalize(self, self._close_callback, self.h5f)
@@ -200,23 +197,14 @@ def prophesee_bbox_filter(labels: np.ndarray, dataset_type: str) -> np.ndarray:
     VGA: バウンディングボックスの対角線の長さが60以上、幅と高さが20以上のバウンディングボックスのみを保持する
     """
 
-    assert dataset_type in {'gen1', 'gen4', 'VGA'}
+    assert dataset_type in {'DSEC', 'GIFU', 'VGA'}, f'{dataset_type=}'
 
     # Default values taken from: https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox/blob/0393adea2bf22d833893c8cb1d986fcbe4e6f82d/src/psee_evaluator.py#L23-L24
     # Corrected values from supplementary mat from paper for min_box_side!
 
-    if dataset_type == 'gen1':
-        min_box_diag = 30
-        min_box_side = 10
-    elif dataset_type == 'gen4':
-        min_box_diag = 60
-        min_box_side = 20
-    elif dataset_type == 'VGA':
-        min_box_diag = 60
-        min_box_side = 20
-    else:
-        NotImplementedError(f'{dataset_type=}')
-
+    
+    min_box_diag = 60
+    min_box_side = 20
     
     w_lbl = labels['w']
     h_lbl = labels['h']
@@ -242,7 +230,7 @@ def conservative_bbox_filter(labels: np.ndarray) -> np.ndarray:
 
 def remove_faulty_huge_bbox_filter(labels: np.ndarray, dataset_type: str) -> np.ndarray:
     """There are some labels which span the frame horizontally without actually covering an object."""
-    assert dataset_type in {'gen1', 'gen4', 'VGA'}
+    assert dataset_type in {'DSEC', 'GIFU', 'VGA'}, f'{dataset_type=}'
     w_lbl = labels['w']
     max_width = (9 * dataset_2_width[dataset_type]) // 10
     side_ok = (w_lbl <= max_width)
@@ -251,7 +239,7 @@ def remove_faulty_huge_bbox_filter(labels: np.ndarray, dataset_type: str) -> np.
 
 
 def crop_to_fov_filter(labels: np.ndarray, dataset_type: str) -> np.ndarray:
-    assert dataset_type in {'gen1', 'gen4', 'VGA'}, f'{dataset_type=}'
+    assert dataset_type in {'DSEC', 'GIFU', 'VGA'}, f'{dataset_type=}'
     # In the gen1 and gen4 datasets the bounding box can be partially or completely outside the frame.
     # We fix this labeling error by cropping to the FOV.
     frame_height = dataset_2_height[dataset_type]
@@ -297,7 +285,7 @@ def apply_filters(labels: np.ndarray,
                   filter_cfg: DictConfig,
                   dataset_type: str = 'gen1') -> np.ndarray:
     assert isinstance(dataset_type, str)
-    if dataset_type == 'gen4':
+    if dataset_type in {'DSEC', 'GIFU', 'VGA'}:
         labels = prophesee_remove_labels_filter_gen4(labels=labels)
     labels = crop_to_fov_filter(labels=labels, dataset_type=dataset_type)
     if filter_cfg.apply_psee_bbox_filter:
@@ -310,10 +298,7 @@ def apply_filters(labels: np.ndarray,
 
 
 def get_base_delta_ts_for_labels_us(unique_label_ts_us: np.ndarray, dataset_type: str = 'gen1') -> int:
-    if dataset_type == 'gen1':
-        delta_t_us_4hz = 250000
-        return delta_t_us_4hz
-    assert dataset_type == 'gen4' or dataset_type == 'VGA'
+    assert dataset_type in {'DSEC', 'GIFU', 'VGA'}, f'{dataset_type=}'
     diff_us = np.diff(unique_label_ts_us)
     median_diff_us = np.median(diff_us)
 
@@ -369,7 +354,8 @@ def labels_and_ev_repr_timestamps(npy_file: Path,
                                   filter_cfg: DictConfig,
                                   align_t_ms: int,
                                   ts_step_ev_repr_ms: int,
-                                  dataset_type: str):
+                                  dataset_type: str,
+                                  in_h5_file:Path):
     """
     ユニークなタイムスタンプを取得し、その間のイベント数を計算する。
     align_t_us 以前は使わない.
@@ -386,6 +372,13 @@ def labels_and_ev_repr_timestamps(npy_file: Path,
 
     sequence_labels = np.load(str(npy_file))
     assert len(sequence_labels) > 0
+
+    if dataset_type == 'DSEC':
+        with h5py.File(str(in_h5_file), 'r') as h5f:
+            offset_us = int(h5f['t_offset'][()])  # マイクロ秒
+        # ラベル側のタイムスタンプから引く
+        sequence_labels['t'] = sequence_labels['t'] - offset_us
+
 
     sequence_labels = apply_filters(labels=sequence_labels,
                                     split_type=split_type,
@@ -594,7 +587,8 @@ def process_sequence(dataset: str,
                 filter_cfg=filter_cfg,
                 align_t_ms=align_t_ms,
                 ts_step_ev_repr_ms=ts_step_ev_repr_ms,
-                dataset_type=dataset)
+                dataset_type=dataset,
+                in_h5_file=in_h5_file)
     except NoLabelsException:
         parent_dir = out_labels_dir.parent
         print(f'No labels after filtering. Deleting {str(parent_dir)}')
@@ -723,23 +717,24 @@ def get_configuration(ev_repr_yaml_config: Path, extraction_yaml_config: Path) -
     config = OmegaConf.merge(config_schema, config)
     return config
 
-
 if __name__ == '__main__':
+    import random
+
     parser = argparse.ArgumentParser()
     parser.add_argument('input_dir')
     parser.add_argument('target_dir')
     parser.add_argument('ev_repr_yaml_config', help='Path to event representation yaml config file')
     parser.add_argument('extraction_yaml_config', help='Path to event window extraction yaml config file')
     parser.add_argument('bbox_filter_yaml_config', help='Path to bbox filter yaml config file')
-    parser.add_argument('-ds', '--dataset', default='gen1', help='gen1 or gen4')
-    parser.add_argument('-np', '--num_processes', type=int, default=1, help="Num proceesses to run in parallel")
+    parser.add_argument('-ds', '--dataset', default='gen1', help='gen1, gen4, or VGA')
+    parser.add_argument('-np', '--num_processes', type=int, default=1, help="Number of processes to run in parallel")
     args = parser.parse_args()
 
     num_processes = args.num_processes
-
     dataset = args.dataset
-    assert dataset in ('gen1', 'gen4', 'VGA')
-    downsample_by_2 = True if dataset == 'gen4' else False
+    assert dataset in ('DSEC', 'GIFU', 'VGA')
+    # 例: gen4の場合はダウンサンプルを有効にする
+    downsample_by_2 = False
 
     config = get_configuration(ev_repr_yaml_config=Path(args.ev_repr_yaml_config),
                                extraction_yaml_config=Path(args.extraction_yaml_config))
@@ -753,87 +748,95 @@ if __name__ == '__main__':
     print(OmegaConf.to_yaml(config))
 
     ev_repr_factory: EventRepresentationFactory = name_2_ev_repr_factory[config.name](config)
-    height = dataset_2_height[args.dataset]
-    width = dataset_2_width[args.dataset]
+    height = dataset_2_height[dataset]
+    width = dataset_2_width[dataset]
     ev_repr = ev_repr_factory.create(height=height, width=width)
     ev_repr_string = ev_repr_factory.name
 
     dataset_input_path = Path(args.input_dir)
-    train_path = dataset_input_path / 'train'
-    val_path = dataset_input_path / 'val'
-    test_path = dataset_input_path / 'test'
     target_dir = Path(args.target_dir)
     os.makedirs(target_dir, exist_ok=True)
 
-    assert train_path.exists(), f'{train_path=}'
-    assert val_path.exists(), f'{val_path=}'
-    assert test_path.exists(), f'{test_path=}'
+    # 入力ディレクトリ直下の全シーケンスディレクトリを取得し、ランダムにシャッフル
+    all_seq_dirs = [seq_dir for seq_dir in dataset_input_path.iterdir() if seq_dir.is_dir()]
+    random.shuffle(all_seq_dirs)
+    N = len(all_seq_dirs)
+    n_train = int(N * 8 / 10)
+    n_val = int(N * 1 / 10)
+    n_test = N - n_train - n_val
+
+    train_seq_dirs = all_seq_dirs[:n_train]
+    val_seq_dirs = all_seq_dirs[n_train:n_train + n_val]
+    test_seq_dirs = all_seq_dirs[n_train + n_val:]
+
+    print(f"Total sequences: {N} (train: {len(train_seq_dirs)}, val: {len(val_seq_dirs)}, test: {len(test_seq_dirs)})")
+
+    # 各split用の出力ディレクトリを作成
+    train_out_dir = target_dir / 'train'
+    val_out_dir = target_dir / 'val'
+    test_out_dir = target_dir / 'test'
+    for d in [train_out_dir, val_out_dir, test_out_dir]:
+        os.makedirs(d, exist_ok=True)
+
+    # 各シーケンスの情報をDataKeysの辞書にまとめる
+    def create_sequence_data(seq_dir: Path, split_type: SplitType, out_parent: Path) -> Optional[Dict]:
+        # ラベルファイル: object_detections/left/tracks.npy
+        label_file = seq_dir / "object_detections" / "left" / "tracks.npy"
+        # イベントファイル: events/left/events.h5
+        event_file = seq_dir / "events" / "left" / "events.h5"
+        if not label_file.exists():
+            print(f"シーケンス {seq_dir.name} のラベルファイルが見つかりません")
+            return None
+        if not event_file.exists():
+            print(f"シーケンス {seq_dir.name} のイベントファイルが見つかりません")
+            return None
+
+        # 不要なシーケンスの除外（必要に応じて）
+        if seq_dir.name in dirs_to_ignore[dataset]:
+            return None
+
+        out_seq_path = out_parent / seq_dir.name
+        out_labels_path = out_seq_path / 'labels_v2'
+        os.makedirs(out_labels_path, exist_ok=True)
+        out_ev_repr_parent_path = out_seq_path / 'event_representations_v2'
+        out_ev_repr_path = out_ev_repr_parent_path / ev_repr_string
+        os.makedirs(out_ev_repr_path, exist_ok=True)
+
+        return {
+            DataKeys.InNPY: label_file,
+            DataKeys.InH5: event_file,
+            DataKeys.OutLabelDir: out_labels_path,
+            DataKeys.OutEvReprDir: out_ev_repr_path,
+            DataKeys.SplitType: split_type,
+        }
 
     seq_data_list = list()
-    for split in ['train', 'val', 'test']:
-        split_dir = dataset_input_path / split
-        split_out_dir = target_dir / split
-        os.makedirs(split_out_dir, exist_ok=True)
 
-        # *_bbox.npy のファイルをすべて検索
-        for npy_file in split_dir.glob("*_bbox.npy"):
-            # ファイル名例: "sequence_003_bbox.npy" → シーケンス識別子 "sequence_003"
-            sequence_id = npy_file.stem.replace("_bbox", "")
+    for seq_dir in train_seq_dirs:
+        data = create_sequence_data(seq_dir, SplitType.TRAIN, train_out_dir)
+        if data is not None:
+            seq_data_list.append(data)
+    for seq_dir in val_seq_dirs:
+        data = create_sequence_data(seq_dir, SplitType.VAL, val_out_dir)
+        if data is not None:
+            seq_data_list.append(data)
+    for seq_dir in test_seq_dirs:
+        data = create_sequence_data(seq_dir, SplitType.TEST, test_out_dir)
+        if data is not None:
+            seq_data_list.append(data)
 
-            # dataset に応じて h5 ファイル名を決定
-            if dataset == "gen1":
-                h5_filename = f"{sequence_id}_td.dat.h5"
-            elif dataset in {"gen4", "VGA"}:
-                h5_filename = f"{sequence_id}_td.h5"
-            else:
-                raise ValueError(f"Unsupported dataset: {dataset}")
-
-            h5f_path = split_dir / h5_filename
-            if not h5f_path.exists():
-                print(f"Missing required file for sequence {sequence_id}")
-                continue
-
-            # 除外対象のシーケンスかどうかチェック
-            if sequence_id in dirs_to_ignore[dataset]:
-                continue
-
-            # 出力先ディレクトリの作成
-            out_seq_path = split_out_dir / sequence_id
-            out_labels_path = out_seq_path / 'labels_v2'
-            os.makedirs(out_labels_path, exist_ok=True)
-            out_ev_repr_parent_path = out_seq_path / 'event_representations_v2'
-            out_ev_repr_path = out_ev_repr_parent_path / ev_repr_string
-            os.makedirs(out_ev_repr_path, exist_ok=True)
-
-            sequence_data = {
-                DataKeys.InNPY: npy_file,
-                DataKeys.InH5: h5f_path,
-                DataKeys.OutLabelDir: out_labels_path,
-                DataKeys.OutEvReprDir: out_ev_repr_path,
-                DataKeys.SplitType: split_name_2_type[split],
-            }
-            seq_data_list.append(sequence_data)
-
-
-
+    # イベント表現生成のパラメータ設定（COUNT または DURATION）
     ev_repr_num_events = None
     ev_repr_delta_ts_ms = None
-    """
-    modification : define ts_step_ev_repr_ms from config
-    """
     if config.event_window_extraction.method == AggregationType.COUNT:
         ev_repr_num_events = config.event_window_extraction.value
-        ## イベント表現を生成する間隔
         ts_step_ev_repr_ms = config.event_window_extraction.ts_step_ev_repr_ms
     else:
         assert config.event_window_extraction.method == AggregationType.DURATION
-        ## イベント表現を生成する時に使われるイベントの時間 例: 過去100msのイベントを利用してイベントヒストグラムを生成
         ev_repr_delta_ts_ms = config.event_window_extraction.value
-         ## イベント表現を生成する間隔
         ts_step_ev_repr_ms = config.event_window_extraction.ts_step_ev_repr_ms
 
-    
-
+    # 並列処理または逐次処理で各シーケンスを処理
     if num_processes > 1:
         chunksize = 1
         func = partial(process_sequence,
