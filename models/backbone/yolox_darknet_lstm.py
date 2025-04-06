@@ -129,12 +129,13 @@ class CSPDarknetLSTM(nn.Module):
     def forward(self, x, prev_states=None, token_mask=None):
         if prev_states is None:
             prev_states = [None] * 5
-        next_states = []
+        states = []
         outputs = {}
 
         x = self.stem(x)
-        x, state = self.lstm_stem(x, prev_states[0])
-        next_states.append(state)
+        h_c_tuple = self.lstm_stem(x, prev_states[0])
+        x = h_c_tuple[0]
+        states.append(h_c_tuple)
         outputs[1] = x
 
         modules = [self.dark2, self.dark3, self.dark4, self.dark5]
@@ -151,12 +152,13 @@ class CSPDarknetLSTM(nn.Module):
             if token_mask is not None and idx - 2 < len(mask_tokens):
                 x = x.masked_fill(token_mask, mask_tokens[idx - 2])
 
-            x, state = lstm(x, prev_states[idx - 1])
-            next_states.append(state)
+            h_c_tuple = lstm(x, prev_states[idx - 1])
+            x = h_c_tuple[0]
+            states.append(h_c_tuple)
             outputs[idx] = x
 
         filtered_outputs = {k: outputs[k] for k in self.out_features}
-        return filtered_outputs, next_states
+        return filtered_outputs, states
     
     ## add
     def get_stage_dims(self, stages):
