@@ -13,6 +13,8 @@ def fetch_model_module(config: DictConfig) -> pl.LightningModule:
         return ssm_det_module(config)
     elif model_str in {'YOLOX'}:
         return dnn_det_module(config)
+    elif model_str in {'YOLOX_LSTM'}:
+        return rnn_det_module(config)
     raise NotImplementedError
 
 def fetch_data_module(config: DictConfig) -> pl.LightningDataModule:

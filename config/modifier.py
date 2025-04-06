@@ -53,6 +53,13 @@ def dynamically_modify_train_config(config: DictConfig):
             num_classes = 2 if dataset_name == 'gen1' else 3
             mdl_cfg.head.num_classes = num_classes
             pass
+        elif mdl_name == 'YOLOX_LSTM':
+            backbone_cfg = mdl_cfg.backbone
+            mdl_hw = (320, 320) if dataset_name == 'gen1' else (640, 640)
+            backbone_cfg.in_res_hw = mdl_hw
+            num_classes = 2 if dataset_name == 'gen1' else 3
+            mdl_cfg.head.num_classes = num_classes
+            pass
 
         else:
             print(f'{mdl_name=} not available')
