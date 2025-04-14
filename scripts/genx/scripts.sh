@@ -1,7 +1,7 @@
 #!/bin/bash
 NUM_PROCESSES=5  # set to the number of parallel processes to use
 DATA_DIR=/path/to/input
-DATASET=gen4 ## gen1 or gen4
+DATASET=gen4 ## gen1 or gen4 or DSEC
 DT=(5 10 20 50 100)  # Different duration values
 
 for dt in "${DT[@]}"; do

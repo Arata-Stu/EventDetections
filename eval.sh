@@ -17,12 +17,18 @@ CKPTS=(
 GPU_IDS=0  # 変更が必要なら適宜変更
 MODEL="rvt"  # rvt, rvt_s5, yolox
 MODEL_SIZE="tiny"  # tiny, small, base
-DATASET="gen4"  # gen1, gen4
+DATASET="gen4"  # gen1, gen4 DSEC GIFU
 BATCH_SIZE_PER_GPU=8
 EVAL_WORKERS_PER_GPU=2
 T_BIN=10
 CHANNEL=20
 SEQUENCE_LENGTH=5
+
+if [[ "${DATASET}" == "DSEC" || "${DATASET}" == "GIFU" ]]; then
+    CONFIG_DATASET_NAME="vga"
+else
+    CONFIG_DATASET_NAME="${DATASET}"
+fi
 
 # DT_VALUESのindexを利用してループ実行
 for i in "${!DT_VALUES[@]}"; do
@@ -32,7 +38,7 @@ for i in "${!DT_VALUES[@]}"; do
     
     echo "Running evaluation with DT=${DT} using checkpoint ${CKPT}"
     
-    python3 validation.py dataset=${DATASET} model=${MODEL} +model/${MODEL}=${MODEL_SIZE}.yaml +exp=val \
+    python3 validation.py dataset=${CONFIG_DATASET_NAME} model=${MODEL} +model/${MODEL}=${MODEL_SIZE}.yaml +exp=val \
     dataset.path=${DATA_DIR} dataset.ev_repr_name="'stacked_histogram_dt=${DT}_nbins=${T_BIN}'" dataset.sequence_length=${SEQUENCE_LENGTH} \
     hardware.gpus=${GPU_IDS} model.backbone.input_channels=${CHANNEL} \
     hardware.num_workers.eval=${EVAL_WORKERS_PER_GPU} \
