@@ -22,6 +22,13 @@ else
     CONFIG_DATASET_NAME="${DATASET}"
 fi
 
+# gen4のみdownsample_by_factor_2=Trueにする
+if [[ "${DATASET}" == "gen4" ]]; then
+    DOWNSAMPLE=True
+else
+    DOWNSAMPLE=False
+fi
+
 # ループで異なるDTの値を設定して実行
 for DT in "${DT_VALUES[@]}"; do
     DATA_DIR="/home/aten-22/dataset/${DATASET}_preprocessed_bins_${T_BIN}/dt_${DT}"
@@ -34,7 +41,8 @@ for DT in "${DT_VALUES[@]}"; do
     hardware.gpus=${GPU_IDS} model.backbone.input_channels=${CHANNEL} \
     hardware.num_workers.train=${TRAIN_WORKERS_PER_GPU} hardware.num_workers.eval=${EVAL_WORKERS_PER_GPU} \
     batch_size.train=${BATCH_SIZE_PER_GPU} batch_size.eval=${BATCH_SIZE_PER_GPU} \
-    wandb.project_name=${PROJECT} wandb.group_name=${GROUP}
+    wandb.project_name=${PROJECT} wandb.group_name=${GROUP} \
+    dataset.downsample_by_factor_2=${DOWNSAMPLE} 
     
     echo "Finished training for DT=${DT}"
 done

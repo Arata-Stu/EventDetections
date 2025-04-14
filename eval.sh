@@ -30,6 +30,13 @@ else
     CONFIG_DATASET_NAME="${DATASET}"
 fi
 
+# gen4のみdownsample_by_factor_2=Trueにする
+if [[ "${DATASET}" == "gen4" ]]; then
+    DOWNSAMPLE=True
+else
+    DOWNSAMPLE=False
+fi
+
 # DT_VALUESのindexを利用してループ実行
 for i in "${!DT_VALUES[@]}"; do
     DT=${DT_VALUES[$i]}
@@ -43,7 +50,7 @@ for i in "${!DT_VALUES[@]}"; do
     hardware.gpus=${GPU_IDS} model.backbone.input_channels=${CHANNEL} \
     hardware.num_workers.eval=${EVAL_WORKERS_PER_GPU} \
     batch_size.eval=${BATCH_SIZE_PER_GPU} \
-    checkpoint="'${CKPT}'"
+    checkpoint="'${CKPT}'" dataset.downsample_by_factor_2=${DOWNSAMPLE} 
     
     echo "Finished evaluation for DT=${DT} BINS=${T_BIN}"
 done
