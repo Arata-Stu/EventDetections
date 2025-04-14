@@ -757,20 +757,26 @@ if __name__ == '__main__':
     target_dir = Path(args.target_dir)
     os.makedirs(target_dir, exist_ok=True)
 
-    # 入力ディレクトリ直下の全シーケンスディレクトリを取得し、ランダムにシャッフル
+    # --- split_config の読み込み ---
+    with open("dsec_split.yaml", 'r') as f:
+        split_config = OmegaConf.load(f)
+
+    split_names = {
+        "train": set(split_config.train),
+        "val": set(split_config.val),
+        "test": set(split_config.test),
+    }
+
+    # --- 入力シーケンス取得とマッピング ---
     all_seq_dirs = [seq_dir for seq_dir in dataset_input_path.iterdir() if seq_dir.is_dir()]
-    random.shuffle(all_seq_dirs)
+    seq_dir_map = {seq_dir.name: seq_dir for seq_dir in all_seq_dirs}
+
+    train_seq_dirs = [seq_dir_map[name] for name in split_names["train"] if name in seq_dir_map]
+    val_seq_dirs = [seq_dir_map[name] for name in split_names["val"] if name in seq_dir_map]
+    test_seq_dirs = [seq_dir_map[name] for name in split_names["test"] if name in seq_dir_map]
+
     N = len(all_seq_dirs)
-    n_train = int(N * 8 / 10)
-    n_val = int(N * 1 / 10)
-    n_test = N - n_train - n_val
-
-    train_seq_dirs = all_seq_dirs[:n_train]
-    val_seq_dirs = all_seq_dirs[n_train:n_train + n_val]
-    test_seq_dirs = all_seq_dirs[n_train + n_val:]
-
     print(f"Total sequences: {N} (train: {len(train_seq_dirs)}, val: {len(val_seq_dirs)}, test: {len(test_seq_dirs)})")
-
     # 各split用の出力ディレクトリを作成
     train_out_dir = target_dir / 'train'
     val_out_dir = target_dir / 'val'
