@@ -101,7 +101,7 @@ if __name__ == "__main__":
         pass  # すでに設定されている場合は無視
 
     parser = argparse.ArgumentParser(description="Batch motion preprocessor for Gen1, Gen4, DSEC .npy labels")
-    parser.add_argument("input_dir", type=str, help="Directory containing .npy label files or DSEC GIFU root")
+    parser.add_argument("--input_dir", type=str, help="Directory containing .npy label files or DSEC GIFU root")
     parser.add_argument("--dataset", type=str, choices=["gen1", "gen4", "DSEC", "GIFU"], required=True, help="Dataset name")
     parser.add_argument("--num_workers", type=int, default=None, help="Number of parallel workers (default: CPU count)")
 
