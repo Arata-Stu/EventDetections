@@ -718,7 +718,6 @@ def get_configuration(ev_repr_yaml_config: Path, extraction_yaml_config: Path) -
     return config
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
     parser.add_argument('input_dir')
     parser.add_argument('target_dir')
@@ -731,20 +730,20 @@ if __name__ == '__main__':
 
     num_processes = args.num_processes
     dataset = args.dataset
-    assert dataset in ('DSEC', 'GIFU', 'VGA')
-    # 例: gen4の場合はダウンサンプルを有効にする
+    assert dataset in {'GIFU'}, f'{dataset=}'
     downsample_by_2 = False
 
-    config = get_configuration(ev_repr_yaml_config=Path(args.ev_repr_yaml_config),
-                               extraction_yaml_config=Path(args.extraction_yaml_config))
+    config = get_configuration(
+        ev_repr_yaml_config=Path(args.ev_repr_yaml_config),
+        extraction_yaml_config=Path(args.extraction_yaml_config)
+    )
 
     bbox_filter_yaml_config = Path(args.bbox_filter_yaml_config)
     assert bbox_filter_yaml_config.exists()
     filter_cfg = OmegaConf.load(str(bbox_filter_yaml_config))
     filter_cfg = OmegaConf.merge(OmegaConf.structured(FilterConf), filter_cfg)
 
-    print('')
-    print(OmegaConf.to_yaml(config))
+    print('\n' + OmegaConf.to_yaml(config))
 
     ev_repr_factory: EventRepresentationFactory = name_2_ev_repr_factory[config.name](config)
     height = dataset_2_height[dataset]
@@ -752,96 +751,62 @@ if __name__ == '__main__':
     ev_repr = ev_repr_factory.create(height=height, width=width)
     ev_repr_string = ev_repr_factory.name
 
-    dataset_input_path = Path(args.input_dir)
-    target_dir = Path(args.target_dir)
-    os.makedirs(target_dir, exist_ok=True)
+    input_root = Path(args.input_dir)
+    output_root = Path(args.target_dir)
+    os.makedirs(output_root, exist_ok=True)
 
-    # --- split_config の読み込み ---
-    with open("dsec_split.yaml", 'r') as f:
-        split_config = OmegaConf.load(f)
+    splits = ['train', 'val', 'test']
+    split_type_map = {'train': SplitType.TRAIN, 'val': SplitType.VAL, 'test': SplitType.TEST}
 
-    split_names = {
-        "train": set(split_config.train),
-        "val": set(split_config.val),
-        "test": set(split_config.test),
-    }
+    seq_data_list = []
 
-    # --- 入力シーケンス取得とマッピング ---
-    all_seq_dirs = [seq_dir for seq_dir in dataset_input_path.iterdir() if seq_dir.is_dir()]
-    seq_dir_map = {seq_dir.name: seq_dir for seq_dir in all_seq_dirs}
+    for split in splits:
+        split_input_dir = input_root / split
+        split_output_dir = output_root / split
+        os.makedirs(split_output_dir, exist_ok=True)
 
-    train_seq_dirs = [seq_dir_map[name] for name in split_names["train"] if name in seq_dir_map]
-    val_seq_dirs = [seq_dir_map[name] for name in split_names["val"] if name in seq_dir_map]
-    test_seq_dirs = [seq_dir_map[name] for name in split_names["test"] if name in seq_dir_map]
+        for seq_dir in sorted(split_input_dir.iterdir()):
+            if not seq_dir.is_dir():
+                continue
 
-    N = len(all_seq_dirs)
-    print(f"Total sequences: {N} (train: {len(train_seq_dirs)}, val: {len(val_seq_dirs)}, test: {len(test_seq_dirs)})")
-    # 各split用の出力ディレクトリを作成
-    train_out_dir = target_dir / 'train'
-    val_out_dir = target_dir / 'val'
-    test_out_dir = target_dir / 'test'
-    for d in [train_out_dir, val_out_dir, test_out_dir]:
-        os.makedirs(d, exist_ok=True)
+            label_file = seq_dir / 'labels' / 'labels_events.npy'
+            event_file = seq_dir / 'events' / 'events.h5'
 
-    # 各シーケンスの情報をDataKeysの辞書にまとめる
-    def create_sequence_data(seq_dir: Path, split_type: SplitType, out_parent: Path) -> Optional[Dict]:
-        # ラベルファイル: object_detections/left/tracks.npy
-        label_file = seq_dir / "object_detections" / "left" / "tracks.npy"
-        # イベントファイル: events/left/events.h5
-        event_file = seq_dir / "events" / "left" / "events.h5"
-        if not label_file.exists():
-            print(f"シーケンス {seq_dir.name} のラベルファイルが見つかりません")
-            return None
-        if not event_file.exists():
-            print(f"シーケンス {seq_dir.name} のイベントファイルが見つかりません")
-            return None
+            if not label_file.exists():
+                print(f"[WARNING] ラベルファイルが見つかりません: {label_file}")
+                continue
+            if not event_file.exists():
+                print(f"[WARNING] イベントファイルが見つかりません: {event_file}")
+                continue
 
-        # 不要なシーケンスの除外（必要に応じて）
-        if seq_dir.name in dirs_to_ignore[dataset]:
-            return None
+            out_seq_path = split_output_dir / seq_dir.name
+            out_labels_path = out_seq_path / 'labels_v2'
+            out_ev_repr_parent_path = out_seq_path / 'event_representations_v2'
+            out_ev_repr_path = out_ev_repr_parent_path / ev_repr_string
 
-        out_seq_path = out_parent / seq_dir.name
-        out_labels_path = out_seq_path / 'labels_v2'
-        os.makedirs(out_labels_path, exist_ok=True)
-        out_ev_repr_parent_path = out_seq_path / 'event_representations_v2'
-        out_ev_repr_path = out_ev_repr_parent_path / ev_repr_string
-        os.makedirs(out_ev_repr_path, exist_ok=True)
+            os.makedirs(out_labels_path, exist_ok=True)
+            os.makedirs(out_ev_repr_path, exist_ok=True)
 
-        return {
-            DataKeys.InNPY: label_file,
-            DataKeys.InH5: event_file,
-            DataKeys.OutLabelDir: out_labels_path,
-            DataKeys.OutEvReprDir: out_ev_repr_path,
-            DataKeys.SplitType: split_type,
-        }
+            seq_data = {
+                DataKeys.InNPY: label_file,
+                DataKeys.InH5: event_file,
+                DataKeys.OutLabelDir: out_labels_path,
+                DataKeys.OutEvReprDir: out_ev_repr_path,
+                DataKeys.SplitType: split_type_map[split],
+            }
+            seq_data_list.append(seq_data)
 
-    seq_data_list = list()
-
-    for seq_dir in train_seq_dirs:
-        data = create_sequence_data(seq_dir, SplitType.TRAIN, train_out_dir)
-        if data is not None:
-            seq_data_list.append(data)
-    for seq_dir in val_seq_dirs:
-        data = create_sequence_data(seq_dir, SplitType.VAL, val_out_dir)
-        if data is not None:
-            seq_data_list.append(data)
-    for seq_dir in test_seq_dirs:
-        data = create_sequence_data(seq_dir, SplitType.TEST, test_out_dir)
-        if data is not None:
-            seq_data_list.append(data)
-
-    # イベント表現生成のパラメータ設定（COUNT または DURATION）
+    # イベント表現生成のパラメータ設定
     ev_repr_num_events = None
     ev_repr_delta_ts_ms = None
     if config.event_window_extraction.method == AggregationType.COUNT:
         ev_repr_num_events = config.event_window_extraction.value
         ts_step_ev_repr_ms = config.event_window_extraction.ts_step_ev_repr_ms
     else:
-        assert config.event_window_extraction.method == AggregationType.DURATION
         ev_repr_delta_ts_ms = config.event_window_extraction.value
         ts_step_ev_repr_ms = config.event_window_extraction.ts_step_ev_repr_ms
 
-    # 並列処理または逐次処理で各シーケンスを処理
+    # 並列 or 逐次処理
     if num_processes > 1:
         chunksize = 1
         func = partial(process_sequence,
