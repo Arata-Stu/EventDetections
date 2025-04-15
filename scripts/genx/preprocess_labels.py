@@ -58,7 +58,7 @@ def process_one_file(label_path):
         return f"[✗] Failed: {label_path} — {e}"
 
 def collect_npy_files(input_dir, dataset_name):
-    dataset_name = dataset_name.lower()
+    dataset_name = dataset_name
     
     if dataset_name in ['gen1', 'gen4']:
         all_files = []
