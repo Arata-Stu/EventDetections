@@ -1,8 +1,8 @@
 import sys
 sys.path.append('../..')
 
+import os
 import hydra
-import torch
 from omegaconf import DictConfig, OmegaConf
 
 from config.modifier import dynamically_modify_train_config
@@ -24,6 +24,10 @@ def main(cfg: DictConfig):
     num_sequence = cfg.num_sequence
     dataset_mode = cfg.dataset_mode
     ckpt_path = cfg.ckpt_path
+
+    dir_name = os.path.dirname(output_path)
+    if dir_name and not os.path.exists(dir_name):
+        os.makedirs(dir_name, exist_ok=True)
 
     ## データセットの読み込み
     data = fetch_data_module(config=cfg)
