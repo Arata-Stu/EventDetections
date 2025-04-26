@@ -257,9 +257,7 @@ def create_video(data: pl.LightningDataModule , model: pl.LightningModule, ckpt_
     ## device 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if ckpt_path is not None:
-        ckpt = torch.load(ckpt_path, map_location=device)
-        model.load_state_dict(ckpt['state_dict'])
+    
 
     if show_pred:
         model.eval()
@@ -268,6 +266,10 @@ def create_video(data: pl.LightningDataModule , model: pl.LightningModule, ckpt_
         prev_states = rnn_state.get_states(worker_id=0)
         size = model.in_res_hw
         input_padder = InputPadderFromShape(size)
+
+    if ckpt_path is not None:
+        ckpt = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(ckpt['state_dict'])
 
     sequence_count = 0
     
