@@ -38,7 +38,7 @@ classid2colors = {
 
 dataset2labelmap = {
     "gen1": LABELMAP_GEN1,
-    "gen4": LABELMAP_GEN4,
+    "gen4": LABELMAP_GEN4_SHORT,
     "VGA": LABELMAP_VGA,
 }
 
