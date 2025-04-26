@@ -281,6 +281,8 @@ def create_video(data: pl.LightningDataModule , model: pl.LightningModule, ckpt_
         labels = data_batch[DataType.OBJLABELS_SEQ]
         is_first_sample = data_batch[DataType.IS_FIRST_SAMPLE]
 
+        rnn_state.reset(worker_id=0, indices_or_bool_tensor=is_first_sample)
+
         if is_first_sample.any():
             sequence_count += 1
             if sequence_count > num_sequence:
