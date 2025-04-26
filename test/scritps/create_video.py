@@ -29,12 +29,9 @@ def main(cfg: DictConfig):
     data = fetch_data_module(config=cfg)
     ## モデルの読み込み
     module = fetch_model_module(config=cfg)
-    if ckpt_path is not None:
-        ckpt = torch.load(ckpt_path, map_location='cpu')
-        module.load_state_dict(ckpt['state_dict'])
         
     ##ビデオの作成
-    create_video(data, module, show_gt, show_pred, output_path, fps, num_sequence, dataset_mode)
+    create_video(data, module, ckpt_path, show_gt, show_pred, output_path, fps, num_sequence, dataset_mode)
 
 if __name__ == '__main__':
     main()

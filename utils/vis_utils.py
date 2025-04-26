@@ -225,7 +225,7 @@ def visualize(video_writer: cv2.VideoWriter, ev_tensors: torch.Tensor, labels_yo
 
     video_writer.write(img)
 
-def create_video(data: pl.LightningDataModule , model: pl.LightningModule, show_gt: bool, show_pred: bool, output_path: str, fps: int, num_sequence: int, dataset_mode: DatasetMode):  
+def create_video(data: pl.LightningDataModule , model: pl.LightningModule, ckpt_path: str ,show_gt: bool, show_pred: bool, output_path: str, fps: int, num_sequence: int, dataset_mode: DatasetMode):  
 
     data_size =  dataset2size[data.dataset_name]
 
@@ -256,6 +256,10 @@ def create_video(data: pl.LightningDataModule , model: pl.LightningModule, show_
 
     ## device 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if ckpt_path is not None:
+        ckpt = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(ckpt['state_dict'])
 
     if show_pred:
         model.eval()
