@@ -14,7 +14,7 @@ USE_BEST=True # True: best.ckpt, False: last.ckpt
 
 for DT in "${DT_VALUES[@]}"; do
     DATA_DIR="/home/aten-22/dataset/${DATASET}_preprocessed_bins_${T_BIN}/dt_${DT}"
-    OUTPUT_VIDEO="${DATASET}_bin_${T_BIN}_dt_${DT}.mp4"
+    OUTPUT_VIDEO="${DATASET}_bin_${T_BIN}/dt_${DT}.mp4"
 
     if [ "$USE_BEST" = True ]; then
         CKPT_NAME="best.ckpt"
