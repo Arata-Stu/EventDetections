@@ -27,6 +27,5 @@ OUTPUT_VIDEO=outputs.mp4
 python3 create_video.py \
 model=${MODEL} +model/${MODEL}=${SIZE}.yaml \
 dataset=${DATASET} dataset.path=${INPUT_PATH} \
-output_path=${OUTPUT_VIDEO} gt=False pred=False
-+model
+output_path=${OUTPUT_VIDEO} gt=False pred=False num_sequence=1
 ```
