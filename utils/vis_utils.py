@@ -220,7 +220,7 @@ def visualize(video_writer: cv2.VideoWriter, ev_tensors: torch.Tensor, labels_yo
         img = draw_bboxes_with_id(img, labels_yolox, dataset_name)
 
     if pred_processed is not None and pred_processed[0] is not None:
-        pred_processed = pred_processed[0].cpu().numpy()
+        pred_processed = pred_processed[0].detach().cpu().numpy()
         img = draw_bboxes_with_id(img, pred_processed, dataset_name)
 
     video_writer.write(img)
