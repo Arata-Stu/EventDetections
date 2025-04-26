@@ -263,7 +263,6 @@ def create_video(data: pl.LightningDataModule , model: pl.LightningModule, ckpt_
         model.eval()
         model.to(device)  # モデルをデバイスに移動
         rnn_state = RNNStates()
-        prev_states = rnn_state.get_states(worker_id=0)
         size = model.in_res_hw
         input_padder = InputPadderFromShape(size)
 
@@ -282,7 +281,8 @@ def create_video(data: pl.LightningDataModule , model: pl.LightningModule, ckpt_
         is_first_sample = data_batch[DataType.IS_FIRST_SAMPLE]
 
         rnn_state.reset(worker_id=0, indices_or_bool_tensor=is_first_sample)
-
+        prev_states = rnn_state.get_states(worker_id=0)
+        
         if is_first_sample.any():
             sequence_count += 1
             if sequence_count > num_sequence:
