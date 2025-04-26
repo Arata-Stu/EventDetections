@@ -14,7 +14,20 @@ USE_BEST=True # True: best.ckpt, False: last.ckpt
 
 for DT in "${DT_VALUES[@]}"; do
     DATA_DIR="/home/aten-22/dataset/${DATASET}_preprocessed_bins_${T_BIN}/dt_${DT}"
-    OUTPUT_VIDEO="${DATASET}_bin_${T_BIN}/dt_${DT}.mp4"
+
+    # gtとpredによるサフィックスを作成
+    SUFFIX=""
+    if [ "$GT" = True ]; then
+        SUFFIX="${SUFFIX}_gt"
+    fi
+    if [ "$PREDICTION" = True ]; then
+        SUFFIX="${SUFFIX}_pred"
+    fi
+    if [ -z "$SUFFIX" ]; then
+        SUFFIX="_nogt_pred"
+    fi
+
+    OUTPUT_VIDEO="${DATASET}_bin_${T_BIN}/dt_${DT}${SUFFIX}.mp4"
 
     if [ "$USE_BEST" = True ]; then
         CKPT_NAME="best.ckpt"
