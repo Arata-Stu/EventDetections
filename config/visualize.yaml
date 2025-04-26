@@ -1,5 +1,4 @@
 defaults:
-  - general
   - model: ???   
   - dataset: ???  
   - _self_
