@@ -24,7 +24,7 @@ for DT in "${DT_VALUES[@]}"; do
         SUFFIX="${SUFFIX}_pred"
     fi
     if [ -z "$SUFFIX" ]; then
-        SUFFIX="_nogt_pred"
+        SUFFIX="_no_gt_pred"
     fi
 
     OUTPUT_VIDEO="${DATASET}_bin_${T_BIN}/dt_${DT}${SUFFIX}.mp4"
