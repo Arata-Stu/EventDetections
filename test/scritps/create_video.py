@@ -2,6 +2,7 @@ import sys
 sys.path.append('../..')
 
 import hydra
+import torch
 from omegaconf import DictConfig, OmegaConf
 
 from config.modifier import dynamically_modify_train_config
@@ -28,11 +29,12 @@ def main(cfg: DictConfig):
     data = fetch_data_module(config=cfg)
     ## モデルの読み込み
     module = fetch_model_module(config=cfg)
-    module_class = type(module)
     if ckpt_path is not None:
-        model = module_class.load_from_checkpoint(module, ckpt_path=ckpt_path)
+        ckpt = torch.load(ckpt_path, map_location='cpu')
+        module.load_state_dict(ckpt['state_dict'])
+        
     ##ビデオの作成
-    create_video(data, model, show_gt, show_pred, output_path, fps, num_sequence, dataset_mode)
+    create_video(data, module, show_gt, show_pred, output_path, fps, num_sequence, dataset_mode)
 
 if __name__ == '__main__':
     main()
